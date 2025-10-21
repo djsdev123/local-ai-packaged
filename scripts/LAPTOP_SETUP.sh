@@ -49,6 +49,86 @@ if ! command -v ollama &> /dev/null; then
     brew install ollama
 fi
 
+# Install Open WebUI via Docker
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Installing Open WebUI (Web Interface)..."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Check if Docker is installed
+if ! command -v docker &> /dev/null; then
+    echo "Installing Docker..."
+    brew install --cask docker
+    echo ""
+    echo "⚠️  IMPORTANT: Docker Desktop installed!"
+    echo "   Please:"
+    echo "   1. Open Docker Desktop from Applications"
+    echo "   2. Wait for it to start (whale icon in menu bar)"
+    echo "   3. Come back and press Enter"
+    read -p "Press Enter after Docker Desktop is running..."
+fi
+
+# Wait for Docker to be ready
+echo "Waiting for Docker to be ready..."
+for i in {1..30}; do
+    if docker info > /dev/null 2>&1; then
+        echo "✅ Docker is ready"
+        break
+    fi
+    if [ $i -eq 30 ]; then
+        echo "❌ Docker not responding. Please start Docker Desktop manually."
+        exit 1
+    fi
+    sleep 2
+done
+
+# Pull and run Open WebUI
+echo "Setting up Open WebUI..."
+docker pull ghcr.io/open-webui/open-webui:main
+
+# Create Open WebUI start script
+cat > ~/gpu-tools/start-webui << EOF
+#!/bin/bash
+# Start Open WebUI connected to GPU
+
+GPU_URL="http://${GPU_IP}:11434"
+
+echo "Starting Open WebUI connected to GPU..."
+echo "GPU Server: \$GPU_URL"
+echo ""
+
+# Stop existing container if running
+docker stop open-webui 2>/dev/null
+docker rm open-webui 2>/dev/null
+
+# Start Open WebUI
+docker run -d \\
+  --name open-webui \\
+  -p 3000:8080 \\
+  -e OLLAMA_BASE_URL=\$GPU_URL \\
+  -v open-webui:/app/backend/data \\
+  --restart unless-stopped \\
+  ghcr.io/open-webui/open-webui:main
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ Open WebUI Started!"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Open in browser: http://localhost:3000"
+echo ""
+echo "GPU Server: \$GPU_URL"
+echo ""
+echo "Opening browser in 3 seconds..."
+sleep 3
+open "http://localhost:3000"
+EOF
+
+chmod +x ~/gpu-tools/start-webui
+
+# Start Open WebUI now
+~/gpu-tools/start-webui
+
 # Create wake utility directory
 mkdir -p ~/gpu-tools
 
@@ -365,6 +445,59 @@ EOF
 
 chmod +x ~/Desktop/GPU_Status.command
 
+cat > ~/Desktop/Open_WebUI.command << EOF
+#!/bin/bash
+# Open WebUI Launcher
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  OPEN WEBUI LAUNCHER"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# Check if Docker is running
+if ! docker info > /dev/null 2>&1; then
+    echo "❌ Docker is not running"
+    echo ""
+    echo "Please start Docker Desktop first:"
+    echo "1. Open Applications"
+    echo "2. Launch Docker Desktop"
+    echo "3. Wait for whale icon in menu bar"
+    echo "4. Run this script again"
+    echo ""
+    read -p "Press Enter to close..."
+    exit 1
+fi
+
+# Check if Open WebUI container exists
+if docker ps -a | grep -q "open-webui"; then
+    # Container exists, check if running
+    if docker ps | grep -q "open-webui"; then
+        echo "✅ Open WebUI is already running"
+        echo ""
+        echo "Opening browser..."
+        open "http://localhost:3000"
+    else
+        echo "Starting Open WebUI..."
+        docker start open-webui
+        echo ""
+        echo "✅ Open WebUI started!"
+        echo ""
+        echo "Opening browser in 3 seconds..."
+        sleep 3
+        open "http://localhost:3000"
+    fi
+else
+    echo "Open WebUI not found. Starting fresh..."
+    cd ~/gpu-tools
+    ./start-webui
+fi
+
+echo ""
+read -p "Press Enter to close..."
+EOF
+
+chmod +x ~/Desktop/Open_WebUI.command
+
 # Add to PATH
 if ! grep -q "gpu-tools" ~/.zshrc 2>/dev/null; then
     echo 'export PATH="$HOME/gpu-tools:$PATH"' >> ~/.zshrc
@@ -380,8 +513,14 @@ echo "✅ SETUP COMPLETE!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "Desktop shortcuts created:"
+echo "  • Open_WebUI.command - Start web interface (MAIN)"
 echo "  • GPU_Wake.command - Wake up GPU"
 echo "  • GPU_Status.command - Check GPU status"
+echo ""
+echo "Open WebUI (Web Interface):"
+echo "  • Browser: http://localhost:3000"
+echo "  • Restart: start-webui"
+echo "  • Already connected to your GPU!"
 echo ""
 echo "Command-line tools:"
 echo "  gpu-wake status      - Check GPU status"
@@ -402,3 +541,16 @@ echo ""
 
 # Initial test
 ~/gpu-tools/gpu-wake status
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🎉 Open WebUI should be opening in your browser!"
+echo ""
+echo "First time setup in Open WebUI:"
+echo "1. Create an account (stored locally)"
+echo "2. Models from GPU will appear automatically"
+echo "3. Start chatting!"
+echo ""
+echo "If GPU is asleep, wake it first:"
+echo "  gpu-wake wake"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

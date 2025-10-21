@@ -19,6 +19,7 @@
 ## Commands You'll Use
 
 ### Desktop Shortcuts (Mac):
+- **Open_WebUI.command** → ChatGPT-like interface (RECOMMENDED)
 - **GPU_Wake.command** → Wake GPU (double-click)
 - **GPU_Status.command** → Check status (double-click)
 
@@ -109,7 +110,13 @@ GPU not working?
 
 ### Scenario: "First use of the day"
 ```bash
-# PC was sleeping all night
+# Using Web Interface (easiest):
+1. Double-click "Open_WebUI.command"
+2. If models don't appear, GPU is asleep
+3. Open terminal: gpu-wake wake
+4. Wait 60 seconds, refresh browser
+
+# Using CLI:
 gpu-wake wake
 # Wait ~60 seconds
 gpu-wake status

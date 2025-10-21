@@ -56,6 +56,7 @@ Simple, secure setup for accessing your home GPU from anywhere with automatic sl
 **What gets installed:**
 - NordVPN with Meshnet
 - Ollama CLI
+- Open WebUI (ChatGPT-like web interface)
 - Wake utilities
 - Desktop shortcuts
 
@@ -65,11 +66,18 @@ Simple, secure setup for accessing your home GPU from anywhere with automatic sl
 
 ### On Laptop:
 
-**Option 1: Desktop Shortcuts**
+**Option 1: Open WebUI (Recommended - ChatGPT-like Interface)**
+1. Double-click **Open_WebUI.command** on desktop
+2. Browser opens to `http://localhost:3000`
+3. Start chatting! (models from GPU auto-appear)
+
+**If GPU is asleep:** Wake it first with `gpu-wake wake`, then refresh Open WebUI
+
+**Option 2: Desktop Shortcuts**
 - Double-click **GPU_Wake.command** → Wakes GPU and shows status
 - Double-click **GPU_Status.command** → Check if GPU is ready
 
-**Option 2: Command Line**
+**Option 3: Command Line**
 ```bash
 # Check if GPU is awake
 gpu-wake status
@@ -207,7 +215,8 @@ gpu-wake troubleshoot
 │           │                           │                    │
 │           │                           │                    │
 │      ┌────▼──────────────────────────▼────┐               │
-│      │      gpu-wake / ollama-gpu         │               │
+│      │  Open WebUI (localhost:3000)       │               │
+│      │  + gpu-wake / ollama-gpu           │               │
 │      └─────────────────┬──────────────────┘               │
 └────────────────────────┼───────────────────────────────────┘
                          │
@@ -330,6 +339,12 @@ brew upgrade --cask nordvpn
 ---
 
 ## FAQ
+
+**Q: How do I use the web interface instead of CLI?**
+A: Double-click `Open_WebUI.command` on your desktop. It opens a ChatGPT-like interface at `http://localhost:3000` that's automatically connected to your GPU.
+
+**Q: Do I need to configure Open WebUI to use the GPU?**
+A: No! The setup script automatically configures Open WebUI with your GPU's meshnet URL. Just start it and chat.
 
 **Q: Can I use this on cellular data?**
 A: Yes! NordVPN Meshnet works over any internet connection.
