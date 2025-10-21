@@ -1,0 +1,24 @@
+# SOPS configuration for Local AI Package
+# This file defines which files should be encrypted and with what keys
+
+creation_rules:
+  # Encrypt .env files with Age
+  - path_regex: \.env$
+    age: >-
+      age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    # Replace the age public key above with your own generated key
+    # Generate with: age-keygen -o ~/.config/sops/age/keys.txt
+    # Then use the public key from that file
+
+  # Encrypt .env.* files (for multiple environments)
+  - path_regex: \.env\..*
+    age: >-
+      age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+  # Encrypt any files in secrets/ directory
+  - path_regex: secrets/.*
+    age: >-
+      age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# Note: If SOPS_AGE_KEY_FILE environment variable is set, SOPS will use that key file
+# You can also use SOPS_AGE_KEY environment variable to pass the private key directly

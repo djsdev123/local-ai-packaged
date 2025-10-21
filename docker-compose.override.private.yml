@@ -64,3 +64,12 @@ services:
   ollama-gpu-amd:
     ports:
       - 127.0.0.1:11434:11434
+
+  gitea:
+    ports:
+      - 127.0.0.1:9000:3000
+      - 127.0.0.1:2222:22
+
+  infisical:
+    ports:
+      - 127.0.0.1:9001:8080

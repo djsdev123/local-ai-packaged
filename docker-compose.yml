@@ -14,6 +14,10 @@ volumes:
   langfuse_clickhouse_data:
   langfuse_clickhouse_logs:
   langfuse_minio_data:
+  gitea_data:
+  gitea_config:
+  infisical_mongo_data:
+  infisical_redis_data:
 
 x-n8n: &service-n8n
   image: n8nio/n8n:latest
@@ -156,6 +160,8 @@ services:
       - SEARXNG_HOSTNAME=${SEARXNG_HOSTNAME:-":8006"}
       - LANGFUSE_HOSTNAME=${LANGFUSE_HOSTNAME:-":8007"}
       - NEO4J_HOSTNAME=${NEO4J_HOSTNAME:-":8008"}
+      - GITEA_HOSTNAME=${GITEA_HOSTNAME:-":9000"}
+      - INFISICAL_HOSTNAME=${INFISICAL_HOSTNAME:-":9001"}
       - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-internal}
     cap_drop:
       - ALL
@@ -354,6 +360,92 @@ services:
       options:
         max-size: "1m"
         max-file: "1"
+
+  gitea:
+    container_name: gitea
+    image: gitea/gitea:latest
+    restart: unless-stopped
+    expose:
+      - 3000/tcp
+      - 22/tcp
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__database__DB_TYPE=postgres
+      - GITEA__database__HOST=postgres:5432
+      - GITEA__database__NAME=gitea
+      - GITEA__database__USER=postgres
+      - GITEA__database__PASSWD=${POSTGRES_PASSWORD}
+      - GITEA__server__DOMAIN=${GITEA_HOSTNAME:-localhost}
+      - GITEA__server__SSH_DOMAIN=${GITEA_HOSTNAME:-localhost}
+      - GITEA__server__ROOT_URL=${GITEA__server__PROTOCOL:-http}://${GITEA_HOSTNAME:-localhost:9000}/
+      - GITEA__server__HTTP_PORT=3000
+      - GITEA__server__SSH_PORT=22
+      - GITEA__service__DISABLE_REGISTRATION=${GITEA_DISABLE_REGISTRATION:-false}
+      - GITEA__security__INSTALL_LOCK=true
+      - GITEA__security__SECRET_KEY=${GITEA_SECRET_KEY:-}
+      - GITEA__security__INTERNAL_TOKEN=${GITEA_INTERNAL_TOKEN:-}
+    volumes:
+      - gitea_data:/data
+      - gitea_config:/etc/gitea
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  infisical-mongo:
+    container_name: infisical-mongo
+    image: mongo:7
+    restart: unless-stopped
+    expose:
+      - 27017/tcp
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${INFISICAL_MONGO_USER:-infisical}
+      MONGO_INITDB_ROOT_PASSWORD: ${INFISICAL_MONGO_PASSWORD:-infisical}
+    volumes:
+      - infisical_mongo_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  infisical-redis:
+    container_name: infisical-redis
+    image: redis:7-alpine
+    restart: unless-stopped
+    expose:
+      - 6379/tcp
+    volumes:
+      - infisical_redis_data:/data
+    command: redis-server --requirepass ${INFISICAL_REDIS_PASSWORD:-infisical}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  infisical:
+    container_name: infisical
+    image: infisical/infisical:latest
+    restart: unless-stopped
+    expose:
+      - 8080/tcp
+    depends_on:
+      infisical-mongo:
+        condition: service_healthy
+      infisical-redis:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - ENCRYPTION_KEY=${INFISICAL_ENCRYPTION_KEY}
+      - JWT_SECRET=${INFISICAL_JWT_SECRET}
+      - MONGO_URL=mongodb://${INFISICAL_MONGO_USER:-infisical}:${INFISICAL_MONGO_PASSWORD:-infisical}@infisical-mongo:27017/?authSource=admin
+      - REDIS_URL=redis://:${INFISICAL_REDIS_PASSWORD:-infisical}@infisical-redis:6379
+      - SITE_URL=${INFISICAL_SITE_URL:-http://localhost:8080}
+      - TELEMETRY_ENABLED=${INFISICAL_TELEMETRY_ENABLED:-false}
 
   ollama-cpu:
     profiles: ["cpu"]

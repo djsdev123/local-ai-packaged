@@ -1,0 +1,22 @@
+# Python dependencies for Local AI Package bootstrap and management scripts
+
+# Core dependencies
+requests>=2.31.0      # HTTP library for API calls
+
+# Optional but recommended for enhanced features
+# Install with: pip install -r requirements.txt
+
+# For password hashing and validation
+argon2-cffi>=23.1.0
+
+# For better terminal output
+rich>=13.7.0
+
+# For YAML parsing (if needed for config management)
+PyYAML>=6.0.1
+
+# Note: sops and age are external binaries, install separately:
+# macOS: brew install sops age
+# Linux: Download from GitHub releases
+#   - SOPS: https://github.com/getsops/sops/releases
+#   - Age: https://github.com/FiloSottile/age/releases
